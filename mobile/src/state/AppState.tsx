@@ -33,8 +33,15 @@ export interface Message {
 /** A heart, or a selfie taken as the reaction (photo file on the device). */
 export type Reaction = { kind: 'heart' } | { kind: 'face'; uri: string };
 
-/** Who recorded in each hour of a day: day key → hour → names. */
-export type ClipLog = Record<string, Record<number, string[]>>;
+/** A 2-second clip, kept on the device until uploads are wired. */
+export interface Clip {
+  author: string;
+  uri: string;
+  recordedAt: number;
+}
+
+/** Clips by day key → local hour → one clip per member. */
+export type ClipLog = Record<string, Record<number, Clip[]>>;
 
 interface AppState {
   profile: Profile | null;
@@ -43,8 +50,8 @@ interface AppState {
   toggleHeart: (roomId: string, messageId: string) => void;
   setFaceReaction: (roomId: string, messageId: string, uri: string) => void;
   clips: Record<string, ClipLog>;
-  /** Stand-in for recording until the camera milestone: marks this hour as posted. */
-  recordPlaceholderClip: (roomId: string) => void;
+  /** Saves my clip for the current hour, replacing an earlier take. */
+  addClip: (roomId: string, uri: string) => void;
   me: string;
   draft: Partial<Profile>;
   rooms: Room[];
@@ -104,17 +111,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setReaction(roomId, messageId, () => ({ kind: 'face', uri })),
       clips,
       me,
-      recordPlaceholderClip: (roomId) => {
+      addClip: (roomId, uri) => {
         const { timeZone, dayBoundaryHour } = COUNTRIES[LAUNCH_COUNTRY];
         const now = new Date();
         const day = dayKey(now, timeZone, dayBoundaryHour);
         const hour = localHour(now, timeZone);
+        const clip: Clip = { author: me, uri, recordedAt: now.getTime() };
         setClips((c) => {
           const log = c[roomId] ?? {};
           const hours = log[day] ?? {};
-          const names = hours[hour] ?? [];
-          if (names.includes(me)) return c;
-          return { ...c, [roomId]: { ...log, [day]: { ...hours, [hour]: [...names, me] } } };
+          const others = (hours[hour] ?? []).filter((x) => x.author !== me);
+          return { ...c, [roomId]: { ...log, [day]: { ...hours, [hour]: [...others, clip] } } };
         });
       },
       updateDraft: (patch) => setDraft((d) => ({ ...d, ...patch })),

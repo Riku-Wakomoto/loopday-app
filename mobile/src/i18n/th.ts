@@ -68,4 +68,10 @@ export const th: Partial<typeof en> = {
   takeReaction: 'ถ่าย',
   allowCamera: 'อนุญาตกล้อง',
   cancel: 'ยกเลิก',
+  retake: 'ถ่ายใหม่',
+  useClip: 'ใช้คลิปนี้',
+  recording: 'กำลังถ่าย…',
+  recordHint: 'แตะเพื่อถ่าย 2 วินาที',
+  flipCamera: 'สลับกล้อง',
+  recordPermission: 'อนุญาตกล้องและไมโครโฟนเพื่อถ่ายคลิป 2 วินาที',
 };

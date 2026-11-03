@@ -72,4 +72,10 @@ export const en = {
   cameraNeeded: 'Allow the camera to react with your face.',
   allowCamera: 'Allow camera',
   cancel: 'Cancel',
+  retake: 'Retake',
+  useClip: 'Use this',
+  recording: 'Recording…',
+  recordHint: 'Tap to record 2 seconds',
+  flipCamera: 'Flip camera',
+  recordPermission: 'Allow the camera and microphone to record your 2-second clip.',
 };

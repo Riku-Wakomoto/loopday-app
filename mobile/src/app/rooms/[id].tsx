@@ -9,16 +9,17 @@ import { t } from '../../i18n';
 import { dayKey, localHour } from '../../lib/day';
 import { groupStreak } from '../../lib/streak';
 import { COUNTRIES, LAUNCH_COUNTRY } from '../../lib/countries';
-import { useAppState } from '../../state/AppState';
+import { useAppState, type Clip } from '../../state/AppState';
+import { ClipPlayer } from '../../components/ClipPlayer';
 import { colors, radius, space } from '../../theme';
 
-type Cell = { kind: 'member'; name: string; isMe: boolean; recorded: boolean } | { kind: 'invite' };
+type Cell = { kind: 'member'; name: string; isMe: boolean; clip?: Clip } | { kind: 'invite' };
 
 // The group's view of the current hour: one tile per member, the viewer's
 // own tile is where they record, and a spare tile invites friends.
 export default function RoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { rooms, messages, clips, me, recordPlaceholderClip } = useAppState();
+  const { rooms, messages, clips, me } = useAppState();
   const room = rooms.find((r) => r.id === id);
   const { timeZone, dayBoundaryHour } = COUNTRIES[LAUNCH_COUNTRY];
   const now = new Date();
@@ -32,7 +33,10 @@ export default function RoomScreen() {
   const postersByDay = useMemo(
     () =>
       Object.fromEntries(
-        Object.entries(clips[id] ?? {}).map(([day, hours]) => [day, Object.values(hours).flat()]),
+        Object.entries(clips[id] ?? {}).map(([day, hours]) => [
+          day,
+          Object.values(hours).flat().map((c) => c.author),
+        ]),
       ),
     [clips, id],
   );
@@ -54,7 +58,7 @@ export default function RoomScreen() {
       kind: 'member',
       name,
       isMe: name === me,
-      recorded: thisHour.includes(name),
+      clip: thisHour.find((c) => c.author === name),
     }));
     return room.members.length < room.capacity ? [...members, { kind: 'invite' }] : members;
   }, [room, me, thisHour]);
@@ -106,7 +110,12 @@ export default function RoomScreen() {
         keyExtractor={(c, i) => (c.kind === 'member' ? c.name : 'invite') + i}
         columnWrapperStyle={{ gap: space.sm }}
         contentContainerStyle={{ gap: space.sm }}
-        renderItem={({ item }) => <Tile cell={item} onRecord={() => recordPlaceholderClip(room.id)} />}
+        renderItem={({ item }) => (
+          <Tile
+            cell={item}
+            onRecord={() => router.push({ pathname: '/rooms/record/[id]', params: { id: room.id } })}
+          />
+        )}
       />
       <ExportSheet visible={sheet === 'export'} onClose={() => setSheet(null)} />
       <CalendarSheet
@@ -144,13 +153,23 @@ function Tile({ cell, onRecord }: { cell: Cell; onRecord: () => void }) {
   }
   return (
     <Pressable
-      style={[styles.tile, cell.isMe && styles.myTile, cell.recorded && styles.recordedTile]}
+      style={[styles.tile, cell.isMe && styles.myTile]}
       onPress={cell.isMe ? onRecord : undefined}
     >
-      <Text style={styles.tileName}>{cell.name}</Text>
-      <Text style={styles.tileMeta}>
-        {cell.recorded ? t('recorded') : cell.isMe ? t('tapToRecord') : t('noClipYet')}
-      </Text>
+      {cell.clip && <ClipPlayer uri={cell.clip.uri} style={StyleSheet.absoluteFill} />}
+      <Text style={[styles.tileName, cell.clip && styles.onVideo]}>{cell.name}</Text>
+      <View style={styles.tileFooter}>
+        {cell.isMe && !cell.clip && <Ionicons name="videocam" size={16} color={colors.accent} />}
+        <Text style={[styles.tileMeta, cell.clip && styles.onVideo]}>
+          {cell.clip
+            ? cell.isMe
+              ? t('retake')
+              : ''
+            : cell.isMe
+              ? t('tapToRecord')
+              : t('noClipYet')}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -173,7 +192,8 @@ const styles = StyleSheet.create({
   },
   streakText: { color: colors.text, fontSize: 13, fontWeight: '600' },
   streakOff: { color: colors.textMuted },
-  recordedTile: { backgroundColor: colors.surfaceRaised },
+  tileFooter: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  onVideo: { textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4 },
   tile: {
     flex: 1,
     // Clips are landscape, so tiles are too.
@@ -182,6 +202,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: space.sm,
     justifyContent: 'space-between',
+    overflow: 'hidden',
   },
   myTile: { borderColor: colors.accent, borderWidth: 2 },
   inviteTile: { alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderColor: colors.border, borderWidth: 1 },

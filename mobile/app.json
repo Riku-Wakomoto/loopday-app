@@ -31,7 +31,8 @@
       "expo-router",
       "expo-localization",
       "expo-status-bar",
-      "expo-camera"
+      "expo-camera",
+      "expo-video"
     ],
     "scheme": "loopday",
     "experiments": {

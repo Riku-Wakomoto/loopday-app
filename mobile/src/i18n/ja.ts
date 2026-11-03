@@ -73,4 +73,10 @@ export const ja: Partial<typeof en> = {
   cameraNeeded: '顔でリアクションするには、カメラを許可してください。',
   allowCamera: 'カメラを許可',
   cancel: 'キャンセル',
+  retake: '撮り直す',
+  useClip: 'これにする',
+  recording: '撮影中…',
+  recordHint: 'タップで2秒撮影',
+  flipCamera: 'カメラを切り替え',
+  recordPermission: '2秒のクリップを撮るために、カメラとマイクを許可してください。',
 };
