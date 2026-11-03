@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,20 +13,21 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FaceReactionSheet } from '../../../components/FaceReactionSheet';
 import { t } from '../../../i18n';
 import { COUNTRIES, LAUNCH_COUNTRY } from '../../../lib/countries';
 import { useAppState, type Message } from '../../../state/AppState';
 import { colors, radius, space } from '../../../theme';
 
-const HEART = '❤️';
-
 // The group's chat. Messages are in memory until the Supabase milestone.
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { rooms, messages, sendMessage, toggleReaction, profile } = useAppState();
+  const { rooms, messages, sendMessage, toggleHeart, setFaceReaction, me } = useAppState();
   const room = rooms.find((r) => r.id === id);
   const list = messages[id] ?? [];
   const [text, setText] = useState('');
+  // The message being reacted to with a selfie.
+  const [faceFor, setFaceFor] = useState<string | null>(null);
 
   const send = () => {
     const body = text.trim();
@@ -64,8 +66,10 @@ export default function ChatScreen() {
           renderItem={({ item }) => (
             <Bubble
               message={item}
-              mine={item.author === profile?.displayName}
-              onHeart={() => toggleReaction(id, item.id, HEART)}
+              mine={item.author === me}
+              me={me}
+              onHeart={() => toggleHeart(id, item.id)}
+              onFace={() => setFaceFor(item.id)}
             />
           )}
         />
@@ -94,13 +98,27 @@ export default function ChatScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      <FaceReactionSheet
+        visible={faceFor !== null}
+        onClose={() => setFaceFor(null)}
+        onTaken={(uri) => faceFor && setFaceReaction(id, faceFor, uri)}
+      />
     </SafeAreaView>
   );
 }
 
-function Bubble(props: { message: Message; mine: boolean; onHeart: () => void }) {
+function Bubble(props: {
+  message: Message;
+  mine: boolean;
+  me: string;
+  onHeart: () => void;
+  onFace: () => void;
+}) {
   const { message, mine } = props;
-  const hearts = Object.values(message.reactions).filter((e) => e === HEART).length;
+  const entries = Object.entries(message.reactions);
+  const hearts = entries.filter(([, r]) => r.kind === 'heart').length;
+  const faces = entries.flatMap(([name, r]) => (r.kind === 'face' ? [{ name, uri: r.uri }] : []));
+  const myHeart = message.reactions[props.me]?.kind === 'heart';
   const time = new Intl.DateTimeFormat(undefined, {
     hour: '2-digit',
     minute: '2-digit',
@@ -111,20 +129,30 @@ function Bubble(props: { message: Message; mine: boolean; onHeart: () => void })
     <View style={[styles.item, mine && styles.itemMine]}>
       {!mine && <Text style={styles.author}>{message.author}</Text>}
       <Pressable
-        onLongPress={props.onHeart}
+        onLongPress={props.onFace}
         style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}
       >
         <Text style={[styles.text, mine && styles.textMine]}>{message.text}</Text>
       </Pressable>
+      {faces.length > 0 && (
+        <View style={[styles.faces, mine && styles.metaMine]}>
+          {faces.map((f) => (
+            <Image key={f.name} source={{ uri: f.uri }} style={styles.face} accessibilityLabel={f.name} />
+          ))}
+        </View>
+      )}
       <View style={[styles.meta, mine && styles.metaMine]}>
         <Text style={styles.time}>{time}</Text>
         <Pressable hitSlop={8} onPress={props.onHeart} style={styles.heart}>
           <Ionicons
-            name={hearts ? 'heart' : 'heart-outline'}
+            name={myHeart ? 'heart' : 'heart-outline'}
             size={16}
             color={hearts ? colors.secondary : colors.textMuted}
           />
           {hearts > 0 && <Text style={styles.time}>{hearts}</Text>}
+        </Pressable>
+        <Pressable hitSlop={8} onPress={props.onFace} accessibilityLabel={t('faceReaction')}>
+          <Ionicons name="happy-outline" size={17} color={colors.textMuted} />
         </Pressable>
       </View>
     </View>
@@ -158,6 +186,8 @@ const styles = StyleSheet.create({
   metaMine: { flexDirection: 'row-reverse' },
   time: { color: colors.textMuted, fontSize: 11 },
   heart: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  faces: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
+  face: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: colors.accent },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',

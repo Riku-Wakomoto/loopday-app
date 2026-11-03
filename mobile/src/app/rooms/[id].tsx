@@ -1,23 +1,24 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CalendarSheet } from '../../components/CalendarSheet';
 import { ExportSheet } from '../../components/ExportSheet';
 import { Screen, TextLink, Title } from '../../components/ui';
 import { t } from '../../i18n';
 import { dayKey, localHour } from '../../lib/day';
+import { groupStreak } from '../../lib/streak';
 import { COUNTRIES, LAUNCH_COUNTRY } from '../../lib/countries';
 import { useAppState } from '../../state/AppState';
 import { colors, radius, space } from '../../theme';
 
-type Cell = { kind: 'member'; name: string; isMe: boolean } | { kind: 'invite' };
+type Cell = { kind: 'member'; name: string; isMe: boolean; recorded: boolean } | { kind: 'invite' };
 
 // The group's view of the current hour: one tile per member, the viewer's
 // own tile is where they record, and a spare tile invites friends.
 export default function RoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { rooms, profile, messages } = useAppState();
+  const { rooms, messages, clips, me, recordPlaceholderClip } = useAppState();
   const room = rooms.find((r) => r.id === id);
   const { timeZone, dayBoundaryHour } = COUNTRIES[LAUNCH_COUNTRY];
   const now = new Date();
@@ -25,10 +26,26 @@ export default function RoomScreen() {
   const today = dayKey(now, timeZone, dayBoundaryHour);
   const [sheet, setSheet] = useState<'export' | 'calendar' | null>(null);
 
-  // Until clips are stored, a day is marked when the group chatted that day.
+  const log = clips[id] ?? {};
+  const thisHour = log[today]?.[hour] ?? [];
+  // Who recorded on each day, for the streak.
+  const postersByDay = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(clips[id] ?? {}).map(([day, hours]) => [day, Object.values(hours).flat()]),
+      ),
+    [clips, id],
+  );
+  const streak = room ? groupStreak(postersByDay, room.members.length, today) : 0;
+  // Days with clips are marked; until recording uploads exist, days the
+  // group chatted are marked too.
   const markedDays = useMemo(
-    () => new Set((messages[id] ?? []).map((m) => dayKey(new Date(m.sentAt), timeZone, dayBoundaryHour))),
-    [messages, id, timeZone, dayBoundaryHour],
+    () =>
+      new Set([
+        ...Object.keys(postersByDay),
+        ...(messages[id] ?? []).map((m) => dayKey(new Date(m.sentAt), timeZone, dayBoundaryHour)),
+      ]),
+    [postersByDay, messages, id, timeZone, dayBoundaryHour],
   );
 
   const cells = useMemo<Cell[]>(() => {
@@ -36,10 +53,11 @@ export default function RoomScreen() {
     const members: Cell[] = room.members.map((name) => ({
       kind: 'member',
       name,
-      isMe: name === profile?.displayName,
+      isMe: name === me,
+      recorded: thisHour.includes(name),
     }));
     return room.members.length < room.capacity ? [...members, { kind: 'invite' }] : members;
-  }, [room, profile]);
+  }, [room, me, thisHour]);
 
   if (!room) {
     return (
@@ -68,7 +86,19 @@ export default function RoomScreen() {
       </View>
       <View style={styles.header}>
         <Title>{room.name}</Title>
-        <Text style={styles.hour}>{`${String(hour).padStart(2, '0')}:00`}</Text>
+        <View style={styles.subRow}>
+          <Text style={styles.hour}>{`${String(hour).padStart(2, '0')}:00`}</Text>
+          <Pressable
+            style={styles.streak}
+            onPress={() => Alert.alert(t('streak', { count: streak }), t('streakHint'))}
+            accessibilityLabel={t('streak', { count: streak })}
+          >
+            <Ionicons name="flame" size={16} color={streak ? colors.accent : colors.textMuted} />
+            <Text style={[styles.streakText, !streak && styles.streakOff]}>
+              {t('streak', { count: streak })}
+            </Text>
+          </Pressable>
+        </View>
       </View>
       <FlatList
         data={cells}
@@ -76,7 +106,7 @@ export default function RoomScreen() {
         keyExtractor={(c, i) => (c.kind === 'member' ? c.name : 'invite') + i}
         columnWrapperStyle={{ gap: space.sm }}
         contentContainerStyle={{ gap: space.sm }}
-        renderItem={({ item }) => <Tile cell={item} />}
+        renderItem={({ item }) => <Tile cell={item} onRecord={() => recordPlaceholderClip(room.id)} />}
       />
       <ExportSheet visible={sheet === 'export'} onClose={() => setSheet(null)} />
       <CalendarSheet
@@ -103,7 +133,7 @@ function IconButton(props: {
   );
 }
 
-function Tile({ cell }: { cell: Cell }) {
+function Tile({ cell, onRecord }: { cell: Cell; onRecord: () => void }) {
   if (cell.kind === 'invite') {
     return (
       <Pressable style={[styles.tile, styles.inviteTile]} onPress={() => {}}>
@@ -113,9 +143,14 @@ function Tile({ cell }: { cell: Cell }) {
     );
   }
   return (
-    <Pressable style={[styles.tile, cell.isMe && styles.myTile]} onPress={() => {}}>
+    <Pressable
+      style={[styles.tile, cell.isMe && styles.myTile, cell.recorded && styles.recordedTile]}
+      onPress={cell.isMe ? onRecord : undefined}
+    >
       <Text style={styles.tileName}>{cell.name}</Text>
-      <Text style={styles.tileMeta}>{cell.isMe ? t('tapToRecord') : t('noClipYet')}</Text>
+      <Text style={styles.tileMeta}>
+        {cell.recorded ? t('recorded') : cell.isMe ? t('tapToRecord') : t('noClipYet')}
+      </Text>
     </Pressable>
   );
 }
@@ -126,6 +161,19 @@ const styles = StyleSheet.create({
   badge: { position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.secondary },
   header: { gap: space.xs },
   hour: { color: colors.accent, fontSize: 15, fontWeight: '700' },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  streak: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  streakText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  streakOff: { color: colors.textMuted },
+  recordedTile: { backgroundColor: colors.surfaceRaised },
   tile: {
     flex: 1,
     // Clips are landscape, so tiles are too.

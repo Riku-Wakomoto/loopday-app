@@ -65,4 +65,12 @@ export const ja: Partial<typeof en> = {
   messagePlaceholder: 'メッセージ',
   send: '送信',
   noMessages: 'まだメッセージはありません。グループに話しかけてみよう。',
+  streak: '{count}日連続',
+  streakHint: '2人以上が撮った日が続いた日数です。自分が1日休んでも途切れません。',
+  recorded: '撮影済み',
+  faceReaction: '顔でリアクション',
+  takeReaction: '撮る',
+  cameraNeeded: '顔でリアクションするには、カメラを許可してください。',
+  allowCamera: 'カメラを許可',
+  cancel: 'キャンセル',
 };

@@ -64,4 +64,12 @@ export const en = {
   messagePlaceholder: 'Message',
   send: 'Send',
   noMessages: 'No messages yet. Say hi to your group.',
+  streak: '{count}-day streak',
+  streakHint: 'Days when 2 or more of you recorded. Skipping a day yourself won\'t break it.',
+  recorded: 'Recorded',
+  faceReaction: 'React with your face',
+  takeReaction: 'Take',
+  cameraNeeded: 'Allow the camera to react with your face.',
+  allowCamera: 'Allow camera',
+  cancel: 'Cancel',
 };

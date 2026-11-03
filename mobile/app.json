@@ -30,7 +30,8 @@
     "plugins": [
       "expo-router",
       "expo-localization",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-camera"
     ],
     "scheme": "loopday",
     "experiments": {

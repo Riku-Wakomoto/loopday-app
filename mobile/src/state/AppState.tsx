@@ -1,5 +1,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { AgeStatus } from '../lib/age';
+import { COUNTRIES, LAUNCH_COUNTRY } from '../lib/countries';
+import { dayKey, localHour } from '../lib/day';
 
 // In-memory app state for the scaffold. Replaced by Supabase-backed data
 // (see supabase/migrations) in the next milestone.
@@ -24,15 +26,26 @@ export interface Message {
   author: string;
   text: string;
   sentAt: number;
-  /** Emoji reactions by display name. */
-  reactions: Record<string, string>;
+  /** One reaction per member, by display name. */
+  reactions: Record<string, Reaction>;
 }
+
+/** A heart, or a selfie taken as the reaction (photo file on the device). */
+export type Reaction = { kind: 'heart' } | { kind: 'face'; uri: string };
+
+/** Who recorded in each hour of a day: day key → hour → names. */
+export type ClipLog = Record<string, Record<number, string[]>>;
 
 interface AppState {
   profile: Profile | null;
   messages: Record<string, Message[]>;
   sendMessage: (roomId: string, text: string) => void;
-  toggleReaction: (roomId: string, messageId: string, emoji: string) => void;
+  toggleHeart: (roomId: string, messageId: string) => void;
+  setFaceReaction: (roomId: string, messageId: string, uri: string) => void;
+  clips: Record<string, ClipLog>;
+  /** Stand-in for recording until the camera milestone: marks this hour as posted. */
+  recordPlaceholderClip: (roomId: string) => void;
+  me: string;
   draft: Partial<Profile>;
   rooms: Room[];
   updateDraft: (patch: Partial<Profile>) => void;
@@ -47,7 +60,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<Partial<Profile>>({});
   const [rooms, setRooms] = useState<Room[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [clips, setClips] = useState<Record<string, ClipLog>>({});
   const me = profile?.displayName ?? draft.displayName ?? 'Me';
+
+  const setReaction = (
+    roomId: string,
+    messageId: string,
+    next: (current: Reaction | undefined) => Reaction | undefined,
+  ) =>
+    setMessages((m) => ({
+      ...m,
+      [roomId]: (m[roomId] ?? []).map((msg) => {
+        if (msg.id !== messageId) return msg;
+        const reactions = { ...msg.reactions };
+        const value = next(reactions[me]);
+        if (value) reactions[me] = value;
+        else delete reactions[me];
+        return { ...msg, reactions };
+      }),
+    }));
 
   const value = useMemo<AppState>(
     () => ({
@@ -65,17 +96,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         };
         setMessages((m) => ({ ...m, [roomId]: [...(m[roomId] ?? []), message] }));
       },
-      toggleReaction: (roomId, messageId, emoji) => {
-        setMessages((m) => ({
-          ...m,
-          [roomId]: (m[roomId] ?? []).map((msg) => {
-            if (msg.id !== messageId) return msg;
-            const reactions = { ...msg.reactions };
-            if (reactions[me] === emoji) delete reactions[me];
-            else reactions[me] = emoji;
-            return { ...msg, reactions };
-          }),
-        }));
+      toggleHeart: (roomId, messageId) =>
+        setReaction(roomId, messageId, (current) =>
+          current?.kind === 'heart' ? undefined : { kind: 'heart' },
+        ),
+      setFaceReaction: (roomId, messageId, uri) =>
+        setReaction(roomId, messageId, () => ({ kind: 'face', uri })),
+      clips,
+      me,
+      recordPlaceholderClip: (roomId) => {
+        const { timeZone, dayBoundaryHour } = COUNTRIES[LAUNCH_COUNTRY];
+        const now = new Date();
+        const day = dayKey(now, timeZone, dayBoundaryHour);
+        const hour = localHour(now, timeZone);
+        setClips((c) => {
+          const log = c[roomId] ?? {};
+          const hours = log[day] ?? {};
+          const names = hours[hour] ?? [];
+          if (names.includes(me)) return c;
+          return { ...c, [roomId]: { ...log, [day]: { ...hours, [hour]: [...names, me] } } };
+        });
       },
       updateDraft: (patch) => setDraft((d) => ({ ...d, ...patch })),
       completeOnboarding: () => {
@@ -98,7 +138,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return room;
       },
     }),
-    [profile, draft, rooms, messages, me],
+    [profile, draft, rooms, messages, clips, me],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

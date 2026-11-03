@@ -62,4 +62,10 @@ export const th: Partial<typeof en> = {
   done: 'เสร็จ',
   messagePlaceholder: 'ข้อความ',
   send: 'ส่ง',
+  streak: 'ต่อเนื่อง {count} วัน',
+  recorded: 'ถ่ายแล้ว',
+  faceReaction: 'รีแอคด้วยหน้าคุณ',
+  takeReaction: 'ถ่าย',
+  allowCamera: 'อนุญาตกล้อง',
+  cancel: 'ยกเลิก',
 };
