@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState, type ElementRef } from 'react';
 import {
   FlatList,
   Image,
@@ -13,6 +13,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ClipCaption, formatHour } from '../../../components/ClipCaption';
+import { ClipPlayer } from '../../../components/ClipPlayer';
 import { FaceReactionSheet } from '../../../components/FaceReactionSheet';
 import { t } from '../../../i18n';
 import { COUNTRIES, LAUNCH_COUNTRY } from '../../../lib/countries';
@@ -28,12 +30,16 @@ export default function ChatScreen() {
   const [text, setText] = useState('');
   // The message being reacted to with a selfie.
   const [faceFor, setFaceFor] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const input = useRef<ElementRef<typeof TextInput>>(null);
+  const byId = new Map(list.map((m) => [m.id, m]));
 
   const send = () => {
     const body = text.trim();
     if (!body) return;
-    sendMessage(id, body);
+    sendMessage(id, body, replyTo?.id);
     setText('');
+    setReplyTo(null);
   };
 
   return (
@@ -68,17 +74,38 @@ export default function ChatScreen() {
               message={item}
               mine={item.author === me}
               me={me}
+              quoted={item.replyTo ? byId.get(item.replyTo) : undefined}
               onHeart={() => toggleHeart(id, item.id)}
               onFace={() => setFaceFor(item.id)}
+              onReply={() => {
+                setReplyTo(item);
+                input.current?.focus();
+              }}
             />
           )}
         />
 
+        {replyTo && (
+          <View style={styles.replyBar}>
+            <Ionicons name="arrow-undo" size={14} color={colors.accent} />
+            <Text style={styles.replyBarText} numberOfLines={1}>
+              {`${t('replyingTo', { name: replyTo.author })}: ${preview(replyTo)}`}
+            </Text>
+            <Pressable hitSlop={8} onPress={() => setReplyTo(null)} accessibilityLabel={t('cancel')}>
+              <Ionicons name="close" size={18} color={colors.textMuted} />
+            </Pressable>
+          </View>
+        )}
         <View style={styles.inputBar}>
-          <Pressable hitSlop={8} onPress={() => {}} accessibilityLabel="camera">
+          <Pressable
+            hitSlop={8}
+            onPress={() => router.push({ pathname: '/rooms/record/[id]', params: { id } })}
+            accessibilityLabel={t('tapToRecord')}
+          >
             <Ionicons name="camera-outline" size={26} color={colors.textMuted} />
           </Pressable>
           <TextInput
+            ref={input}
             style={styles.input}
             value={text}
             onChangeText={setText}
@@ -107,12 +134,19 @@ export default function ChatScreen() {
   );
 }
 
+function preview(m: Message): string {
+  if (m.clip) return `🎬 ${formatHour(m.clip.hour)}${m.clip.caption ? ` ${m.clip.caption}` : ''}`;
+  return m.text;
+}
+
 function Bubble(props: {
   message: Message;
   mine: boolean;
   me: string;
+  quoted?: Message;
   onHeart: () => void;
   onFace: () => void;
+  onReply: () => void;
 }) {
   const { message, mine } = props;
   const entries = Object.entries(message.reactions);
@@ -125,9 +159,59 @@ function Bubble(props: {
     timeZone: COUNTRIES[LAUNCH_COUNTRY].timeZone,
   }).format(new Date(message.sentAt));
 
+  if (message.clip) {
+    return (
+      <View style={styles.clipItem}>
+        <Pressable onLongPress={props.onFace} style={styles.clipCard}>
+          <ClipPlayer uri={message.clip.uri} style={StyleSheet.absoluteFill} />
+          <View style={styles.clipShade} />
+          <ClipCaption hour={message.clip.hour} caption={message.clip.caption} />
+          <View style={styles.clipAuthor}>
+            <Avatar name={message.author} />
+            <Text style={styles.clipAuthorName} numberOfLines={1}>
+              {message.author}
+            </Text>
+          </View>
+          <View style={styles.clipActions}>
+            <Pressable hitSlop={10} onPress={props.onReply} accessibilityLabel={t('reply')}>
+              <Ionicons name="arrow-undo-outline" size={26} color="#fff" />
+            </Pressable>
+            <Pressable hitSlop={10} onPress={props.onHeart} style={styles.clipHeart}>
+              <Ionicons name={myHeart ? 'heart' : 'heart-outline'} size={26} color={myHeart ? colors.secondary : '#fff'} />
+              {hearts > 0 && <Text style={styles.clipCount}>{hearts}</Text>}
+            </Pressable>
+            <Pressable hitSlop={10} onPress={props.onFace} accessibilityLabel={t('faceReaction')}>
+              <Ionicons name="happy-outline" size={26} color="#fff" />
+            </Pressable>
+          </View>
+        </Pressable>
+        {faces.length > 0 && (
+          <View style={styles.clipFaces}>
+            {faces.map((f, i) => (
+              <Image
+                key={f.name}
+                source={{ uri: f.uri }}
+                style={[styles.clipFace, { marginTop: i === 0 ? 0 : -14 }]}
+                accessibilityLabel={f.name}
+              />
+            ))}
+          </View>
+        )}
+        <Text style={[styles.time, styles.clipTime]}>{time}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.item, mine && styles.itemMine]}>
       {!mine && <Text style={styles.author}>{message.author}</Text>}
+      {props.quoted && (
+        <View style={[styles.quote, mine && styles.quoteMine]}>
+          <Text style={styles.quoteText} numberOfLines={1}>
+            {`${props.quoted.author}: ${preview(props.quoted)}`}
+          </Text>
+        </View>
+      )}
       <Pressable
         onLongPress={props.onFace}
         style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}
@@ -154,7 +238,21 @@ function Bubble(props: {
         <Pressable hitSlop={8} onPress={props.onFace} accessibilityLabel={t('faceReaction')}>
           <Ionicons name="happy-outline" size={17} color={colors.textMuted} />
         </Pressable>
+        <Pressable hitSlop={8} onPress={props.onReply} accessibilityLabel={t('reply')}>
+          <Ionicons name="arrow-undo-outline" size={16} color={colors.textMuted} />
+        </Pressable>
       </View>
+    </View>
+  );
+}
+
+// Until profile photos exist, members get a coloured initial.
+const AVATAR_COLORS = ['#FFB547', '#FF7A6B', '#5B8CFF', '#3DBE8B', '#B07CFF', '#F06FB0'];
+function Avatar({ name }: { name: string }) {
+  const color = AVATAR_COLORS[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % AVATAR_COLORS.length];
+  return (
+    <View style={[styles.avatar, { backgroundColor: color }]}>
+      <Text style={styles.avatarText}>{[...name][0]?.toUpperCase() ?? '?'}</Text>
     </View>
   );
 }
@@ -188,6 +286,64 @@ const styles = StyleSheet.create({
   heart: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   faces: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
   face: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: colors.accent },
+  clipItem: { alignSelf: 'stretch', gap: 4 },
+  clipCard: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+  },
+  clipShade: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.12)' },
+  clipAuthor: {
+    position: 'absolute',
+    top: space.sm,
+    left: space.sm,
+    right: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  clipAuthorName: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowRadius: 4,
+    flexShrink: 1,
+  },
+  clipActions: {
+    position: 'absolute',
+    right: space.sm,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    gap: space.md,
+    alignItems: 'center',
+  },
+  clipHeart: { alignItems: 'center' },
+  clipCount: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  clipFaces: { position: 'absolute', left: -6, top: -10 },
+  clipFace: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.background },
+  clipTime: { alignSelf: 'flex-end' },
+  avatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
+  avatarText: { color: colors.accentText, fontWeight: '800', fontSize: 14 },
+  quote: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent,
+    paddingLeft: space.sm,
+    paddingVertical: 2,
+  },
+  quoteMine: { alignSelf: 'flex-end' },
+  quoteText: { color: colors.textMuted, fontSize: 12 },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingHorizontal: space.md,
+    paddingTop: space.sm,
+  },
+  replyBarText: { flex: 1, color: colors.textMuted, fontSize: 13 },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',

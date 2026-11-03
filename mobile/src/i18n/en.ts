@@ -79,4 +79,7 @@ export const en = {
   flipCamera: 'Flip camera',
   recordPermission: 'Allow the camera and microphone to record your 2-second clip.',
   recordFailed: 'Could not record. Please try again.',
+  captionPlaceholder: 'Add a line (optional)',
+  reply: 'Reply',
+  replyingTo: 'Replying to {name}',
 };

@@ -2,15 +2,32 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { CameraView, useCameraPermissions, useMicrophonePermissions, type CameraType } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Animated,
+  Easing,
+  Keyboard,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { formatHour } from '../../../components/ClipCaption';
 import { ClipPlayer } from '../../../components/ClipPlayer';
 import { PrimaryButton } from '../../../components/ui';
 import { t } from '../../../i18n';
+import { COUNTRIES, LAUNCH_COUNTRY } from '../../../lib/countries';
+import { localHour } from '../../../lib/day';
 import { useAppState } from '../../../state/AppState';
 import { colors, radius, space } from '../../../theme';
 
 const CLIP_SECONDS = 2;
+const CAPTION_MAX = 30;
 
 // Records this hour's 2-second clip, then lets you keep it or retake.
 export default function RecordScreen() {
@@ -23,6 +40,8 @@ export default function RecordScreen() {
   const [ready, setReady] = useState(false);
   const [recording, setRecording] = useState(false);
   const [taken, setTaken] = useState<string | null>(null);
+  const [caption, setCaption] = useState('');
+  const hour = localHour(new Date(), COUNTRIES[LAUNCH_COUNTRY].timeZone);
   const progress = useRef(new Animated.Value(0)).current;
 
   // The camera is required; without the microphone the clip is recorded silent.
@@ -123,6 +142,10 @@ export default function RecordScreen() {
       </View>
 
       <SafeAreaView style={styles.overlay} edges={['top', 'bottom']}>
+        <KeyboardAvoidingView
+          style={styles.overlayInner}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
         <View style={styles.topBar}>
           <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel={t('cancel')}>
             <Ionicons name="close" size={30} color="#fff" />
@@ -131,16 +154,38 @@ export default function RecordScreen() {
           <View style={{ width: 30 }} />
         </View>
 
+        {taken && (
+          <Pressable style={styles.captionArea} onPress={Keyboard.dismiss}>
+            <Text style={styles.captionTime}>{formatHour(hour)}</Text>
+            <TextInput
+              value={caption}
+              onChangeText={setCaption}
+              placeholder={t('captionPlaceholder')}
+              placeholderTextColor="rgba(255,255,255,0.7)"
+              maxLength={CAPTION_MAX}
+              returnKeyType="done"
+              blurOnSubmit
+              style={styles.captionInput}
+            />
+          </Pressable>
+        )}
+
         {taken ? (
           <View style={styles.reviewBar}>
-            <Pressable style={styles.secondary} onPress={() => setTaken(null)}>
+            <Pressable
+              style={styles.secondary}
+              onPress={() => {
+                setTaken(null);
+                setCaption('');
+              }}
+            >
               <Ionicons name="refresh" size={20} color={colors.text} />
               <Text style={styles.secondaryText}>{t('retake')}</Text>
             </Pressable>
             <Pressable
               style={styles.primary}
               onPress={() => {
-                addClip(id, taken);
+                addClip(id, taken, caption.trim());
                 router.back();
               }}
             >
@@ -173,6 +218,7 @@ export default function RecordScreen() {
             </Pressable>
           </View>
         )}
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );
@@ -182,6 +228,26 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000' },
   frame: { flex: 1 },
   overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'space-between' },
+  overlayInner: { flex: 1, justifyContent: 'space-between' },
+  captionArea: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
+  captionTime: {
+    color: '#fff',
+    fontSize: 40,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowRadius: 6,
+  },
+  captionInput: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
+    textAlign: 'center',
+    minWidth: 220,
+    paddingVertical: space.sm,
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowRadius: 6,
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',

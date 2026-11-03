@@ -80,4 +80,7 @@ export const ja: Partial<typeof en> = {
   flipCamera: 'カメラを切り替え',
   recordPermission: '2秒のクリップを撮るために、カメラとマイクを許可してください。',
   recordFailed: '撮影できませんでした。もう一度試してください。',
+  captionPlaceholder: 'ひとこと（なくてもOK）',
+  reply: '返信',
+  replyingTo: '{name}さんに返信',
 };

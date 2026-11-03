@@ -10,6 +10,7 @@ import { dayKey, localHour } from '../../lib/day';
 import { groupStreak } from '../../lib/streak';
 import { COUNTRIES, LAUNCH_COUNTRY } from '../../lib/countries';
 import { useAppState, type Clip } from '../../state/AppState';
+import { ClipCaption } from '../../components/ClipCaption';
 import { ClipPlayer } from '../../components/ClipPlayer';
 import { colors, radius, space } from '../../theme';
 
@@ -157,6 +158,7 @@ function Tile({ cell, onRecord }: { cell: Cell; onRecord: () => void }) {
       onPress={cell.isMe ? onRecord : undefined}
     >
       {cell.clip && <ClipPlayer uri={cell.clip.uri} style={StyleSheet.absoluteFill} />}
+      {cell.clip && <ClipCaption hour={cell.clip.hour} caption={cell.clip.caption} size="small" />}
       <Text style={[styles.tileName, cell.clip && styles.onVideo]}>{cell.name}</Text>
       <View style={styles.tileFooter}>
         {cell.isMe && !cell.clip && <Ionicons name="videocam" size={16} color={colors.accent} />}

@@ -75,4 +75,7 @@ export const th: Partial<typeof en> = {
   flipCamera: 'สลับกล้อง',
   recordPermission: 'อนุญาตกล้องและไมโครโฟนเพื่อถ่ายคลิป 2 วินาที',
   recordFailed: 'ถ่ายไม่สำเร็จ ลองอีกครั้ง',
+  captionPlaceholder: 'เพิ่มข้อความสั้นๆ (ไม่บังคับ)',
+  reply: 'ตอบกลับ',
+  replyingTo: 'ตอบกลับ {name}',
 };

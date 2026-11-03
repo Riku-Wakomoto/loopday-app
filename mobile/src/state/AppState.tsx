@@ -26,6 +26,10 @@ export interface Message {
   author: string;
   text: string;
   sentAt: number;
+  /** Set when the message is a posted clip. */
+  clip?: ClipRef;
+  /** The message this one replies to. */
+  replyTo?: string;
   /** One reaction per member, by display name. */
   reactions: Record<string, Reaction>;
 }
@@ -38,7 +42,13 @@ export interface Clip {
   author: string;
   uri: string;
   recordedAt: number;
+  /** Local hour it was recorded in, shown as "14:00". */
+  hour: number;
+  /** Optional one-line caption shown under the time. */
+  caption: string;
 }
+
+export type ClipRef = Pick<Clip, 'uri' | 'hour' | 'caption' | 'recordedAt'>;
 
 /** Clips by day key → local hour → one clip per member. */
 export type ClipLog = Record<string, Record<number, Clip[]>>;
@@ -46,12 +56,12 @@ export type ClipLog = Record<string, Record<number, Clip[]>>;
 interface AppState {
   profile: Profile | null;
   messages: Record<string, Message[]>;
-  sendMessage: (roomId: string, text: string) => void;
+  sendMessage: (roomId: string, text: string, replyTo?: string) => void;
   toggleHeart: (roomId: string, messageId: string) => void;
   setFaceReaction: (roomId: string, messageId: string, uri: string) => void;
   clips: Record<string, ClipLog>;
-  /** Saves my clip for the current hour, replacing an earlier take. */
-  addClip: (roomId: string, uri: string) => void;
+  /** Saves my clip for the current hour (replacing an earlier take) and posts it to the chat. */
+  addClip: (roomId: string, uri: string, caption: string) => void;
   me: string;
   draft: Partial<Profile>;
   rooms: Room[];
@@ -93,12 +103,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       draft,
       rooms,
       messages,
-      sendMessage: (roomId, text) => {
+      sendMessage: (roomId, text, replyTo) => {
         const message: Message = {
           id: Math.random().toString(36).slice(2, 10),
           author: me,
           text,
           sentAt: Date.now(),
+          replyTo,
           reactions: {},
         };
         setMessages((m) => ({ ...m, [roomId]: [...(m[roomId] ?? []), message] }));
@@ -111,12 +122,37 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setReaction(roomId, messageId, () => ({ kind: 'face', uri })),
       clips,
       me,
-      addClip: (roomId, uri) => {
+      addClip: (roomId, uri, caption) => {
         const { timeZone, dayBoundaryHour } = COUNTRIES[LAUNCH_COUNTRY];
         const now = new Date();
         const day = dayKey(now, timeZone, dayBoundaryHour);
         const hour = localHour(now, timeZone);
-        const clip: Clip = { author: me, uri, recordedAt: now.getTime() };
+        const clip: Clip = { author: me, uri, recordedAt: now.getTime(), hour, caption };
+        const ref: ClipRef = { uri, hour, caption, recordedAt: clip.recordedAt };
+        // Post it to the chat; a retake in the same hour replaces my earlier post.
+        setMessages((m) => {
+          const list = m[roomId] ?? [];
+          const sameHour = (msg: Message) =>
+            msg.author === me &&
+            msg.clip?.hour === hour &&
+            dayKey(new Date(msg.clip.recordedAt), timeZone, dayBoundaryHour) === day;
+          const earlier = list.find(sameHour);
+          if (earlier) {
+            return {
+              ...m,
+              [roomId]: list.map((msg) => (msg === earlier ? { ...msg, clip: ref, text: caption } : msg)),
+            };
+          }
+          const message: Message = {
+            id: Math.random().toString(36).slice(2, 10),
+            author: me,
+            text: caption,
+            sentAt: clip.recordedAt,
+            clip: ref,
+            reactions: {},
+          };
+          return { ...m, [roomId]: [...list, message] };
+        });
         setClips((c) => {
           const log = c[roomId] ?? {};
           const hours = log[day] ?? {};
