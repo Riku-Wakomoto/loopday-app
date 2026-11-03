@@ -28,6 +28,17 @@ export function ageStatus(
   return 'adult';
 }
 
+/**
+ * Formats what the user types into YYYY-MM-DD as they go, so they only
+ * enter digits: "20100201" -> "2010-02-01", "20100" -> "2010-0".
+ */
+export function formatBirthdateInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+}
+
 /** Parses YYYY-MM-DD strictly; returns null for impossible dates. */
 export function parseBirthdate(input: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.trim());

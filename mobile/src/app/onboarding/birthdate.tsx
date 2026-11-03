@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Body, Field, PrimaryButton, Screen, Title } from '../../components/ui';
 import { t } from '../../i18n';
-import { ageStatus, parseBirthdate } from '../../lib/age';
+import { ageStatus, formatBirthdateInput, parseBirthdate } from '../../lib/age';
 import { COUNTRIES, LAUNCH_COUNTRY } from '../../lib/countries';
 import { useAppState } from '../../state/AppState';
 import { colors, radius, space } from '../../theme';
@@ -25,9 +25,9 @@ export default function BirthdateStep() {
       <Body muted>{t('birthdateHint')}</Body>
       <Field
         value={input}
-        onChangeText={setInput}
+        onChangeText={(text) => setInput(formatBirthdateInput(text))}
         placeholder={t('birthdatePlaceholder')}
-        keyboardType="numbers-and-punctuation"
+        keyboardType="number-pad"
         maxLength={10}
       />
       {input.length === 10 && !date && <Text style={styles.error}>{t('birthdateInvalid')}</Text>}

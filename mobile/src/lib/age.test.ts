@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ageInYears, ageStatus, parseBirthdate } from './age.ts';
+import { ageInYears, ageStatus, formatBirthdateInput, parseBirthdate } from './age.ts';
 import { COUNTRIES } from './countries.ts';
 
 const now = new Date(2026, 10, 3); // 2026-11-03
@@ -20,6 +20,15 @@ test('Thailand: under 13 blocked, 13-19 minor, 20+ adult', () => {
 test('Saudi Arabia: under 18 blocked', () => {
   assert.equal(ageStatus(new Date(2010, 0, 1), COUNTRIES.SA, now), 'blocked');
   assert.equal(ageStatus(new Date(2008, 0, 1), COUNTRIES.SA, now), 'adult');
+});
+
+test('formatBirthdateInput inserts hyphens while typing digits', () => {
+  assert.equal(formatBirthdateInput('2010'), '2010');
+  assert.equal(formatBirthdateInput('20100'), '2010-0');
+  assert.equal(formatBirthdateInput('2010021'), '2010-02-1');
+  assert.equal(formatBirthdateInput('20100201'), '2010-02-01');
+  // Pasted or partially typed hyphens and extra digits are normalised.
+  assert.equal(formatBirthdateInput('2010-02-0199'), '2010-02-01');
 });
 
 test('parseBirthdate rejects impossible dates', () => {
