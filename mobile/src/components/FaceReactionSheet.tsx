@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { t } from '../i18n';
 import { colors, radius, space } from '../theme';
 import { PrimaryButton } from './ui';
@@ -61,7 +61,14 @@ export function FaceReactionSheet(props: {
         ) : (
           <>
             <Text style={styles.body}>{t('cameraNeeded')}</Text>
-            <PrimaryButton label={t('allowCamera')} onPress={requestPermission} />
+            <View style={{ alignSelf: 'stretch' }}>
+              <PrimaryButton
+                label={t('allowCamera')}
+                onPress={() =>
+                  permission && !permission.canAskAgain ? Linking.openSettings() : requestPermission()
+                }
+              />
+            </View>
           </>
         )}
         <Pressable onPress={props.onClose} hitSlop={8}>

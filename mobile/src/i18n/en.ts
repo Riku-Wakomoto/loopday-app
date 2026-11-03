@@ -78,4 +78,5 @@ export const en = {
   recordHint: 'Tap to record 2 seconds',
   flipCamera: 'Flip camera',
   recordPermission: 'Allow the camera and microphone to record your 2-second clip.',
+  recordFailed: 'Could not record. Please try again.',
 };

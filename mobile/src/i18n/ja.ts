@@ -79,4 +79,5 @@ export const ja: Partial<typeof en> = {
   recordHint: 'タップで2秒撮影',
   flipCamera: 'カメラを切り替え',
   recordPermission: '2秒のクリップを撮るために、カメラとマイクを許可してください。',
+  recordFailed: '撮影できませんでした。もう一度試してください。',
 };

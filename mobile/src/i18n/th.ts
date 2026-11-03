@@ -74,4 +74,5 @@ export const th: Partial<typeof en> = {
   recordHint: 'แตะเพื่อถ่าย 2 วินาที',
   flipCamera: 'สลับกล้อง',
   recordPermission: 'อนุญาตกล้องและไมโครโฟนเพื่อถ่ายคลิป 2 วินาที',
+  recordFailed: 'ถ่ายไม่สำเร็จ ลองอีกครั้ง',
 };

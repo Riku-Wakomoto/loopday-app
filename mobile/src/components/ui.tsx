@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderRadius: radius.pill,
     paddingVertical: space.md,
+    paddingHorizontal: space.xl,
     alignItems: 'center',
   },
   buttonDisabled: { opacity: 0.4 },
