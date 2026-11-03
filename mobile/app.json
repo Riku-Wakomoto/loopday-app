@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Loopday",
+    "slug": "loopday",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.loopday.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Loopday uses the camera to record 2-second clips you share with your group.",
+        "NSMicrophoneUsageDescription": "Loopday records sound with your 2-second clips."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#101418",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "app.loopday.mobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-status-bar"
+    ],
+    "scheme": "loopday",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

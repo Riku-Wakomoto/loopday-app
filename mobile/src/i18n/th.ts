@@ -1,0 +1,48 @@
+import type { en } from './en';
+
+// Draft Thai copy. To be rewritten by a native speaker in Thai youth
+// language before the closed beta (see the MVP spec).
+export const th: Partial<typeof en> = {
+  tagline: 'ทุกชั่วโมง 2 วินาที รวมเป็นวันเดียวกันกับเพื่อน',
+  getStarted: 'เริ่มเลย',
+  next: 'ถัดไป',
+  back: 'กลับ',
+
+  nameTitle: 'ชื่อของคุณคืออะไร',
+  nameHint: 'เพื่อนในกลุ่มจะเห็นชื่อนี้',
+  namePlaceholder: 'ชื่อของคุณ',
+
+  birthdateTitle: 'วันเกิดของคุณ',
+  birthdateHint: 'เราใช้ข้อมูลนี้เพื่อความปลอดภัย และจะไม่แสดงให้คนอื่นเห็น',
+  birthdateInvalid: 'กรุณากรอกวันที่ให้ถูกต้องในรูปแบบ YYYY-MM-DD',
+  ageBlocked: 'ขออภัย ต้องมีอายุอย่างน้อย {age} ปีจึงจะใช้ Loopday ได้',
+  guardianConsent: 'ฉันอายุต่ำกว่า {age} ปี และผู้ปกครองอนุญาตให้ใช้ Loopday แล้ว',
+
+  permissionsTitle: 'ขออนุญาต 2 อย่าง',
+  cameraPermission: 'กล้อง',
+  cameraPermissionWhy: 'เพื่อถ่ายคลิป 2 วินาทีที่แชร์กับกลุ่มของคุณ',
+  notificationPermission: 'การแจ้งเตือน',
+  notificationPermissionWhy: 'เพื่อให้ทุกคนในกลุ่มได้รับสัญญาณถ่ายพร้อมกันทุกชั่วโมง',
+  privacyNote: 'คลิปจะเห็นได้เฉพาะสมาชิกในกลุ่มเท่านั้น ตำแหน่งที่ตั้งปิดไว้เป็นค่าเริ่มต้น',
+  agreeAndContinue: 'ยอมรับและดำเนินการต่อ',
+  termsLine: 'เมื่อดำเนินการต่อ ถือว่าคุณยอมรับข้อกำหนดและประกาศความเป็นส่วนตัว',
+
+  roomsTitle: 'กลุ่มของคุณ',
+  emptyRoomsTitle: 'เริ่มวันแรกของคุณ',
+  emptyRoomsBody: 'สร้างกลุ่มกับเพื่อน แล้วบันทึกวันนี้ไปด้วยกัน',
+  newRoom: 'สร้างกลุ่ม',
+  joinWithCode: 'เข้าร่วมด้วยโค้ด',
+  dayBoundaryNote: 'หนึ่งวันเริ่ม 04:00 ถึง 04:00 ของวันถัดไป',
+
+  newRoomTitle: 'กลุ่มใหม่',
+  roomNamePlaceholder: 'ชื่อกลุ่ม',
+  roomSize: 'กี่คน',
+  roomSizeSolo: 'คนเดียว',
+  roomSizeSummary: 'คุณ + เพื่อน {count} คน',
+  createRoom: 'สร้างกลุ่ม',
+
+  tapToRecord: 'แตะเพื่อถ่าย',
+  inviteFriend: 'ชวนเพื่อน',
+  noClipYet: 'ยังไม่มีคลิป',
+  report: 'รายงาน',
+};

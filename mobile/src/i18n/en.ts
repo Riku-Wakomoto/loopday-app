@@ -1,0 +1,47 @@
+export const en = {
+  appName: 'Loopday',
+  tagline: 'Two seconds every hour. One day, together.',
+  getStarted: 'Get started',
+  next: 'Next',
+  back: 'Back',
+
+  nameTitle: "What's your name?",
+  nameHint: 'Your friends will see this in your group.',
+  namePlaceholder: 'Your name',
+
+  birthdateTitle: 'When is your birthday?',
+  birthdateHint: 'We use this to keep Loopday safe. It is never shown to others.',
+  birthdatePlaceholder: 'YYYY-MM-DD',
+  birthdateInvalid: 'Please enter a real date as YYYY-MM-DD.',
+  ageBlocked: 'Sorry, you need to be at least {age} to use Loopday.',
+  guardianConsent: 'I am under {age}, and a parent or guardian has agreed that I can use Loopday.',
+
+  permissionsTitle: 'Two quick permissions',
+  cameraPermission: 'Camera',
+  cameraPermissionWhy: 'To record the 2-second clips you share with your group.',
+  notificationPermission: 'Notifications',
+  notificationPermissionWhy: 'So everyone in your group gets the same hourly nudge to film.',
+  privacyNote: 'Clips are only visible to members of your group. Location is off by default.',
+  agreeAndContinue: 'Agree and continue',
+  termsLine: 'By continuing you agree to the Terms and Privacy Notice.',
+
+  roomsTitle: 'Your groups',
+  emptyRoomsTitle: 'Start your first day',
+  emptyRoomsBody: 'Make a group with friends and record the day together.',
+  newRoom: 'New group',
+  joinWithCode: 'Join with a code',
+  dayBoundaryNote: 'A day runs from 4:00 to 4:00 the next morning.',
+
+  newRoomTitle: 'New group',
+  roomNamePlaceholder: 'Group name',
+  roomSize: 'How many people?',
+  roomSizeSolo: 'Just me',
+  roomSizeLarge: '6–20',
+  roomSizeSummary: 'You + {count} friends',
+  createRoom: 'Create group',
+
+  tapToRecord: 'Tap to record',
+  inviteFriend: 'Invite a friend',
+  noClipYet: 'No clip yet',
+  report: 'Report',
+};
