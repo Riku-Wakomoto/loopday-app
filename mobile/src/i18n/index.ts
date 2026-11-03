@@ -1,11 +1,12 @@
 import { getLocales } from 'expo-localization';
 import { en } from './en';
+import { ja } from './ja';
 import { th } from './th';
 
 export type Strings = typeof en;
 type Key = keyof Strings;
 
-const catalogs: Record<string, Partial<Strings>> = { en, th };
+const catalogs: Record<string, Partial<Strings>> = { en, th, ja };
 
 function pickLanguage(): string {
   for (const locale of getLocales()) {

@@ -14,6 +14,7 @@ export const th: Partial<typeof en> = {
 
   birthdateTitle: 'วันเกิดของคุณ',
   birthdateHint: 'เราใช้ข้อมูลนี้เพื่อความปลอดภัย และจะไม่แสดงให้คนอื่นเห็น',
+  birthdatePlaceholder: 'กรอกเป็นตัวเลข เช่น 20100201',
   birthdateInvalid: 'กรุณากรอกวันที่ให้ถูกต้องในรูปแบบ YYYY-MM-DD',
   ageBlocked: 'ขออภัย ต้องมีอายุอย่างน้อย {age} ปีจึงจะใช้ Loopday ได้',
   guardianConsent: 'ฉันอายุต่ำกว่า {age} ปี และผู้ปกครองอนุญาตให้ใช้ Loopday แล้ว',

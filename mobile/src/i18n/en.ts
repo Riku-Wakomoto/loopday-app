@@ -11,7 +11,7 @@ export const en = {
 
   birthdateTitle: 'When is your birthday?',
   birthdateHint: 'We use this to keep Loopday safe. It is never shown to others.',
-  birthdatePlaceholder: 'YYYY-MM-DD',
+  birthdatePlaceholder: 'Digits only, e.g. 20100201',
   birthdateInvalid: 'Please enter a real date as YYYY-MM-DD.',
   ageBlocked: 'Sorry, you need to be at least {age} to use Loopday.',
   guardianConsent: 'I am under {age}, and a parent or guardian has agreed that I can use Loopday.',
