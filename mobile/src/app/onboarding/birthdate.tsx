@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Body, Field, PrimaryButton, Screen, Title } from '../../components/ui';
 import { t } from '../../i18n';
 import { ageStatus, formatBirthdateInput, parseBirthdate } from '../../lib/age';
@@ -25,7 +25,12 @@ export default function BirthdateStep() {
       <Body muted>{t('birthdateHint')}</Body>
       <Field
         value={input}
-        onChangeText={(text) => setInput(formatBirthdateInput(text))}
+        onChangeText={(text) => {
+          const formatted = formatBirthdateInput(text);
+          setInput(formatted);
+          // Close the number pad once a full date is entered.
+          if (formatted.length === 10) Keyboard.dismiss();
+        }}
         placeholder={t('birthdatePlaceholder')}
         keyboardType="number-pad"
         maxLength={10}
