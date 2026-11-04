@@ -1,0 +1,8 @@
+# GitHub Pages settings for the public legal and support pages.
+# Enable Pages: Settings → Pages → Deploy from a branch → main / docs.
+title: Loopday
+description: Two seconds every hour. One day, together.
+theme: jekyll-theme-minimal
+exclude:
+  - store
+  - RELEASE.md

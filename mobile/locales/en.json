@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Loopday",
+    "NSCameraUsageDescription": "Loopday uses the camera to record the 2-second clips you share with your group, and selfie reactions.",
+    "NSMicrophoneUsageDescription": "Loopday records sound with your 2-second clips. Without it, clips are silent."
+  }
+}

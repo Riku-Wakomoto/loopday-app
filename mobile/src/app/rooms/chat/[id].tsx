@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ClipCaption, formatHour } from '../../../components/ClipCaption';
 import { ClipPlayer } from '../../../components/ClipPlayer';
 import { FaceReactionSheet } from '../../../components/FaceReactionSheet';
+import { SafetySheet, type SafetyTarget } from '../../../components/SafetySheet';
 import { t } from '../../../i18n';
 import { COUNTRIES, LAUNCH_COUNTRY } from '../../../lib/countries';
 import { useAppState, type Message } from '../../../state/AppState';
@@ -24,9 +25,11 @@ import { colors, radius, space } from '../../../theme';
 // The group's chat. Messages are in memory until the Supabase milestone.
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { rooms, messages, sendMessage, toggleHeart, setFaceReaction, me } = useAppState();
+  const { rooms, messages, sendMessage, toggleHeart, setFaceReaction, me, blocked } = useAppState();
   const room = rooms.find((r) => r.id === id);
-  const list = messages[id] ?? [];
+  // Messages from members I blocked are hidden.
+  const list = (messages[id] ?? []).filter((m) => !blocked.includes(m.author));
+  const [safety, setSafety] = useState<SafetyTarget | null>(null);
   const [text, setText] = useState('');
   // The message being reacted to with a selfie.
   const [faceFor, setFaceFor] = useState<string | null>(null);
@@ -81,6 +84,14 @@ export default function ChatScreen() {
                 setReplyTo(item);
                 input.current?.focus();
               }}
+              onReport={() =>
+                setSafety({
+                  roomId: id,
+                  member: item.author,
+                  messageId: item.id,
+                  clipRecordedAt: item.clip?.recordedAt,
+                })
+              }
             />
           )}
         />
@@ -125,6 +136,7 @@ export default function ChatScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      <SafetySheet target={safety} onClose={() => setSafety(null)} />
       <FaceReactionSheet
         visible={faceFor !== null}
         onClose={() => setFaceFor(null)}
@@ -147,6 +159,7 @@ function Bubble(props: {
   onHeart: () => void;
   onFace: () => void;
   onReply: () => void;
+  onReport: () => void;
 }) {
   const { message, mine } = props;
   const entries = Object.entries(message.reactions);
@@ -183,6 +196,11 @@ function Bubble(props: {
             <Pressable hitSlop={10} onPress={props.onFace} accessibilityLabel={t('faceReaction')}>
               <Ionicons name="happy-outline" size={26} color="#fff" />
             </Pressable>
+            {!mine && (
+              <Pressable hitSlop={10} onPress={props.onReport} accessibilityLabel={t('report')}>
+                <Ionicons name="flag-outline" size={22} color="#fff" />
+              </Pressable>
+            )}
           </View>
         </Pressable>
         {faces.length > 0 && (
@@ -241,6 +259,11 @@ function Bubble(props: {
         <Pressable hitSlop={8} onPress={props.onReply} accessibilityLabel={t('reply')}>
           <Ionicons name="arrow-undo-outline" size={16} color={colors.textMuted} />
         </Pressable>
+        {!mine && (
+          <Pressable hitSlop={8} onPress={props.onReport} accessibilityLabel={t('report')}>
+            <Ionicons name="flag-outline" size={15} color={colors.textMuted} />
+          </Pressable>
+        )}
       </View>
     </View>
   );

@@ -53,6 +53,20 @@ export type ClipRef = Pick<Clip, 'uri' | 'hour' | 'caption' | 'recordedAt'>;
 /** Clips by day key → local hour → one clip per member. */
 export type ClipLog = Record<string, Record<number, Clip[]>>;
 
+/** Matches the `reports.reason` check in the database. */
+export const REPORT_REASONS = ['nudity', 'bullying', 'violence', 'privacy', 'illegal', 'other'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+/** A report waiting to be sent to the moderation queue (`public.reports`). */
+export interface SafetyReport {
+  roomId: string;
+  reportedMember: string;
+  messageId?: string;
+  clipRecordedAt?: number;
+  reason: ReportReason;
+  createdAt: number;
+}
+
 interface AppState {
   profile: Profile | null;
   messages: Record<string, Message[]>;
@@ -68,6 +82,15 @@ interface AppState {
   updateDraft: (patch: Partial<Profile>) => void;
   completeOnboarding: () => void;
   createRoom: (name: string, capacity: number) => Room;
+  /** Members I blocked. Their clips and messages are hidden from me. */
+  blocked: string[];
+  reports: SafetyReport[];
+  report: (r: Omit<SafetyReport, 'createdAt'>) => void;
+  block: (member: string) => void;
+  /** Deletes my clip for that hour, and its post in the chat. */
+  deleteMyClip: (roomId: string, recordedAt: number) => void;
+  /** Deletes the profile, groups, clips and messages on this device. */
+  deleteAccount: () => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -78,6 +101,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [clips, setClips] = useState<Record<string, ClipLog>>({});
+  const [blocked, setBlocked] = useState<string[]>([]);
+  const [reports, setReports] = useState<SafetyReport[]>([]);
   const me = profile?.displayName ?? draft.displayName ?? 'Me';
 
   const setReaction = (
@@ -180,8 +205,41 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setRooms((r) => [room, ...r]);
         return room;
       },
+      blocked,
+      reports,
+      // Kept on the device until the Supabase milestone sends it to the queue.
+      report: (r) => setReports((list) => [...list, { ...r, createdAt: Date.now() }]),
+      block: (member) => setBlocked((list) => (list.includes(member) ? list : [...list, member])),
+      deleteMyClip: (roomId, recordedAt) => {
+        setClips((c) => {
+          const log = c[roomId] ?? {};
+          const next: ClipLog = {};
+          for (const [day, hours] of Object.entries(log)) {
+            next[day] = {};
+            for (const [h, list] of Object.entries(hours)) {
+              next[day][Number(h)] = list.filter((x) => !(x.author === me && x.recordedAt === recordedAt));
+            }
+          }
+          return { ...c, [roomId]: next };
+        });
+        setMessages((m) => ({
+          ...m,
+          [roomId]: (m[roomId] ?? []).filter(
+            (msg) => !(msg.author === me && msg.clip?.recordedAt === recordedAt),
+          ),
+        }));
+      },
+      deleteAccount: () => {
+        setProfile(null);
+        setDraft({});
+        setRooms([]);
+        setMessages({});
+        setClips({});
+        setBlocked([]);
+        setReports([]);
+      },
     }),
-    [profile, draft, rooms, messages, clips, me],
+    [profile, draft, rooms, messages, clips, me, blocked, reports],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

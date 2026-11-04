@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { Body, PrimaryButton, Screen, Title } from '../../components/ui';
 import { t } from '../../i18n';
+import { openLegal } from '../../lib/links';
 import { useAppState } from '../../state/AppState';
 import { colors, radius, space } from '../../theme';
 
@@ -17,7 +18,17 @@ export default function PermissionsStep() {
       <Row label={t('notificationPermission')} why={t('notificationPermissionWhy')} />
       <Body muted>{t('privacyNote')}</Body>
       <View style={{ flex: 1 }} />
-      <Text style={styles.terms}>{t('termsLine')}</Text>
+      <Text style={styles.terms}>
+        {t('termsLead')}
+        <Text style={styles.link} onPress={() => openLegal('terms')}>
+          {t('termsOfUse')}
+        </Text>
+        {t('termsAnd')}
+        <Text style={styles.link} onPress={() => openLegal('privacy')}>
+          {t('privacyPolicy')}
+        </Text>
+        {t('termsTail')}
+      </Text>
       <PrimaryButton
         label={t('agreeAndContinue')}
         onPress={() => {
@@ -43,5 +54,6 @@ const styles = StyleSheet.create({
   row: { backgroundColor: colors.surface, borderRadius: radius.md, padding: space.md, gap: 4 },
   rowLabel: { color: colors.text, fontSize: 17, fontWeight: '600', textAlign: 'auto' },
   rowWhy: { color: colors.textMuted, fontSize: 15, lineHeight: 21, textAlign: 'auto' },
-  terms: { color: colors.textMuted, fontSize: 13, textAlign: 'center' },
+  terms: { color: colors.textMuted, fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  link: { color: colors.accent, textDecorationLine: 'underline' },
 });
