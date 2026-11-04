@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Body, PrimaryButton, Screen, TextLink, Title } from '../../components/ui';
@@ -11,6 +12,7 @@ export default function Rooms() {
   if (rooms.length === 0) {
     return (
       <Screen>
+        <SettingsButton />
         <View style={styles.empty}>
           <Title>{t('emptyRoomsTitle')}</Title>
           <Body muted>{t('emptyRoomsBody')}</Body>
@@ -24,6 +26,7 @@ export default function Rooms() {
 
   return (
     <Screen>
+      <SettingsButton />
       <Title>{t('roomsTitle')}</Title>
       <Body muted>{t('dayBoundaryNote')}</Body>
       <FlatList
@@ -48,7 +51,21 @@ export default function Rooms() {
   );
 }
 
+function SettingsButton() {
+  return (
+    <Pressable
+      style={styles.settings}
+      hitSlop={12}
+      onPress={() => router.push('/settings')}
+      accessibilityLabel={t('settings')}
+    >
+      <Ionicons name="settings-outline" size={24} color={colors.text} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  settings: { alignSelf: 'flex-end' },
   empty: { flex: 1, justifyContent: 'center', gap: space.sm },
   card: {
     backgroundColor: colors.surface,

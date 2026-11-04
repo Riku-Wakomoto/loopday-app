@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Loopday",
+    "NSCameraUsageDescription": "グループに共有する2秒のクリップと、自撮りリアクションの撮影にカメラを使います。",
+    "NSMicrophoneUsageDescription": "2秒のクリップに音声を録音します。許可しない場合は音なしで撮影されます。"
+  }
+}

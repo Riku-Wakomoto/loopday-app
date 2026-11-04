@@ -10,6 +10,7 @@ First market: Thailand (closed beta February 2027), then Saudi Arabia and Mexico
 | `mobile/` | iOS and Android app (Expo, React Native, TypeScript, Expo Router) |
 | `supabase/migrations/` | Database schema and row level security (Supabase Postgres) |
 | `.github/workflows/` | CI: typecheck, unit tests, migration check |
+| `docs/` | Public privacy policy, terms and support pages (GitHub Pages), store listing copy, release steps (`docs/RELEASE.md`) |
 
 Video files are compressed on the device and stored in Cloudflare R2
 (no egress fees). The database only holds metadata.

@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Loopday",
+    "NSCameraUsageDescription": "Loopday ใช้กล้องเพื่อถ่ายคลิป 2 วินาทีที่คุณแชร์กับกลุ่ม และถ่ายเซลฟี่สำหรับรีแอคชัน",
+    "NSMicrophoneUsageDescription": "Loopday บันทึกเสียงไปกับคลิป 2 วินาทีของคุณ หากไม่อนุญาต คลิปจะไม่มีเสียง"
+  }
+}

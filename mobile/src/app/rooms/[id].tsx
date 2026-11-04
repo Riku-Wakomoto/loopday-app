@@ -12,6 +12,7 @@ import { COUNTRIES, LAUNCH_COUNTRY } from '../../lib/countries';
 import { useAppState, type Clip } from '../../state/AppState';
 import { ClipCaption } from '../../components/ClipCaption';
 import { ClipPlayer } from '../../components/ClipPlayer';
+import { SafetySheet, type SafetyTarget } from '../../components/SafetySheet';
 import { colors, radius, space } from '../../theme';
 
 type Cell = { kind: 'member'; name: string; isMe: boolean; clip?: Clip } | { kind: 'invite' };
@@ -20,13 +21,14 @@ type Cell = { kind: 'member'; name: string; isMe: boolean; clip?: Clip } | { kin
 // own tile is where they record, and a spare tile invites friends.
 export default function RoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { rooms, messages, clips, me } = useAppState();
+  const { rooms, messages, clips, me, blocked, deleteMyClip } = useAppState();
   const room = rooms.find((r) => r.id === id);
   const { timeZone, dayBoundaryHour } = COUNTRIES[LAUNCH_COUNTRY];
   const now = new Date();
   const hour = localHour(now, timeZone);
   const today = dayKey(now, timeZone, dayBoundaryHour);
   const [sheet, setSheet] = useState<'export' | 'calendar' | null>(null);
+  const [safety, setSafety] = useState<SafetyTarget | null>(null);
 
   const log = clips[id] ?? {};
   const thisHour = log[today]?.[hour] ?? [];
@@ -59,10 +61,11 @@ export default function RoomScreen() {
       kind: 'member',
       name,
       isMe: name === me,
-      clip: thisHour.find((c) => c.author === name),
+      // Clips from members I blocked are hidden.
+      clip: blocked.includes(name) ? undefined : thisHour.find((c) => c.author === name),
     }));
     return room.members.length < room.capacity ? [...members, { kind: 'invite' }] : members;
-  }, [room, me, thisHour]);
+  }, [room, me, thisHour, blocked]);
 
   if (!room) {
     return (
@@ -115,10 +118,23 @@ export default function RoomScreen() {
           <Tile
             cell={item}
             onRecord={() => router.push({ pathname: '/rooms/record/[id]', params: { id: room.id } })}
+            onLongPress={() => {
+              if (item.kind !== 'member' || !item.clip) return;
+              const clip = item.clip;
+              if (item.isMe) {
+                Alert.alert(t('deleteClip'), t('deleteClipConfirm'), [
+                  { text: t('cancel'), style: 'cancel' },
+                  { text: t('delete'), style: 'destructive', onPress: () => deleteMyClip(room.id, clip.recordedAt) },
+                ]);
+              } else {
+                setSafety({ roomId: room.id, member: item.name, clipRecordedAt: clip.recordedAt });
+              }
+            }}
           />
         )}
       />
       <ExportSheet visible={sheet === 'export'} onClose={() => setSheet(null)} />
+      <SafetySheet target={safety} onClose={() => setSafety(null)} />
       <CalendarSheet
         visible={sheet === 'calendar'}
         onClose={() => setSheet(null)}
@@ -143,7 +159,15 @@ function IconButton(props: {
   );
 }
 
-function Tile({ cell, onRecord }: { cell: Cell; onRecord: () => void }) {
+function Tile({
+  cell,
+  onRecord,
+  onLongPress,
+}: {
+  cell: Cell;
+  onRecord: () => void;
+  onLongPress: () => void;
+}) {
   if (cell.kind === 'invite') {
     return (
       <Pressable style={[styles.tile, styles.inviteTile]} onPress={() => {}}>
@@ -156,6 +180,7 @@ function Tile({ cell, onRecord }: { cell: Cell; onRecord: () => void }) {
     <Pressable
       style={[styles.tile, cell.isMe && styles.myTile]}
       onPress={cell.isMe ? onRecord : undefined}
+      onLongPress={cell.clip ? onLongPress : undefined}
     >
       {cell.clip && <ClipPlayer uri={cell.clip.uri} style={StyleSheet.absoluteFill} />}
       {cell.clip && <ClipCaption hour={cell.clip.hour} caption={cell.clip.caption} size="small" />}

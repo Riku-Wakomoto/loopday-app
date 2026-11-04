@@ -10,8 +10,11 @@
       "supportsTablet": false,
       "bundleIdentifier": "app.loopday.mobile",
       "infoPlist": {
-        "NSCameraUsageDescription": "Loopday uses the camera to record 2-second clips you share with your group.",
-        "NSMicrophoneUsageDescription": "Loopday records sound with your 2-second clips."
+        "NSCameraUsageDescription": "Loopday uses the camera to record the 2-second clips you share with your group, and selfie reactions.",
+        "NSMicrophoneUsageDescription": "Loopday records sound with your 2-second clips. Without it, clips are silent."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
@@ -22,7 +25,12 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "app.loopday.mobile"
+      "package": "app.loopday.mobile",
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,12 +39,23 @@
       "expo-router",
       "expo-localization",
       "expo-status-bar",
-      "expo-camera",
-      "expo-video"
+      [
+        "expo-camera",
+        {
+          "recordAudioAndroid": true
+        }
+      ],
+      "expo-video",
+      "expo-font"
     ],
     "scheme": "loopday",
     "experiments": {
       "typedRoutes": true
+    },
+    "locales": {
+      "en": "./locales/en.json",
+      "th": "./locales/th.json",
+      "ja": "./locales/ja.json"
     }
   }
 }
